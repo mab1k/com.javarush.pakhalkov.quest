@@ -3,16 +3,21 @@ package org.example.projectfinal31.controller;
 import org.example.projectfinal31.entity.Quest;
 import org.example.projectfinal31.entity.User;
 import org.example.projectfinal31.repository.CSVParserRepository;
-
+import org.example.projectfinal31.service.QuestService;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
 import javax.servlet.annotation.*;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
 
 @WebServlet(name = "questServlet", value = "/quest-servlet")
 public class QuestServlet extends HttpServlet {
     private CSVParserRepository repository;
+    private QuestService service;
     private List<Quest.Question> questions;
     private String userName;
     private User user;
@@ -20,10 +25,21 @@ public class QuestServlet extends HttpServlet {
 
     @Override
     public void init() {
-        repository = new CSVParserRepository();
-        filePath = getClass().getClassLoader().getResource("db.csv").getPath();
+        service = new QuestService();
+        Jsonb jsonb = JsonbBuilder.create();
+        InputStream configStream = getClass().getClassLoader().getResourceAsStream("config.json");
+
+        assert configStream != null;
+        Config config = jsonb.fromJson(new InputStreamReader(configStream), Config.class);
+
+        String csvFileName = config.nameDataBase;
+
+        filePath = getClass().getClassLoader().getResource(csvFileName).getPath();
         filePath = filePath.replaceFirst("^/", "");
-        repository.parseAndStoreQuestions(filePath);
+
+        service.parseAndStoreQuestions(filePath);
+
+        repository = new CSVParserRepository(service.getQuestions());
         questions = repository.getQuestions();
     }
 
@@ -55,7 +71,7 @@ public class QuestServlet extends HttpServlet {
 
         if ("true".equals(request.getParameter("gameover"))) {
             request.setAttribute("gamesPlayed", gamesPlayed);
-            System.out.println(userName);
+
             request.setAttribute("userName", userName);
             request.getRequestDispatcher("/gameover.jsp").forward(request, response);
             return;
@@ -76,7 +92,6 @@ public class QuestServlet extends HttpServlet {
             request.getRequestDispatcher("/question.jsp").forward(request, response);
         } else  {
             request.setAttribute("gamesPlayed", gamesPlayed);
-            System.out.println(userName);
             request.setAttribute("userName", userName);
             request.getRequestDispatcher("/wingame.jsp").forward(request, response);
         }
@@ -87,7 +102,7 @@ public class QuestServlet extends HttpServlet {
         HttpSession session = request.getSession();
         String contextPath = request.getContextPath();
 
-        // Получаем индекс текущего вопроса
+        
         Integer currentQuestionIndex = (Integer) session.getAttribute("currentQuestionIndex");
         if (currentQuestionIndex == null) {
             currentQuestionIndex = 0;

@@ -1,31 +1,62 @@
 package org.example.projectfinal31.service;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.example.projectfinal31.entity.Quest;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class QuestService {
 
-    public List<Quest.Question> createQuestionsFromParsedData(Map<Integer, Map<String, Integer>> parsedData) {
-        List<Quest.Question> questions = new ArrayList<>();
+    private List<Quest.Question> questions;
 
-        for (Map.Entry<Integer, Map<String, Integer>> entry : parsedData.entrySet()) {
-            Long questionId = Long.valueOf(entry.getKey());
-            String textQuestion = "Question for ID: " + questionId; // Здесь вы можете заменить на реальный текст вопроса, если он у вас есть
+    public List<Quest.Question> getQuestions() {
+        return questions;
+    }
 
-            List<Quest.Answer> answers = new ArrayList<>();
-            for (Map.Entry<String, Integer> answerEntry : entry.getValue().entrySet()) {
-                Long answerId = Long.valueOf(answerEntry.getValue());
-                String answerText = answerEntry.getKey();
-                answers.add(new Quest.Answer(answerId, questionId, answerText));
+    public void setQuestions(List<Quest.Question> questions) {
+        this.questions = questions;
+    }
+
+    public void parseAndStoreQuestions(String csvPath) {
+        try {
+            Reader reader = new InputStreamReader(Files.newInputStream(Paths.get(csvPath)), StandardCharsets.UTF_8);
+            CSVParser csvParser = new CSVParser(reader, CSVFormat.DEFAULT
+                    .withFirstRecordAsHeader()
+                    .withTrim());
+
+            List<Quest.Question> questionList = new ArrayList<>();
+
+            for (CSVRecord record : csvParser) {
+                Long questionId = Long.parseLong(record.get("IdQuestion"));
+                String textQuestion = record.get("TextQuestion");
+                String[] answers = record.get("TextAnswer").split(",");
+
+                List<Quest.Answer> answerList = new ArrayList<>();
+                for (int i = 0; i < answers.length; i++) {
+                    Long answerId = questionId * 10 + (i + 1);
+                    answerList.add(new Quest.Answer(answerId, questionId, answers[i].trim()));
+                }
+
+                Quest.Question question = new Quest.Question(questionId, textQuestion, answerList);
+                questionList.add(question);
             }
 
-            Quest.Question question = new Quest.Question(questionId, textQuestion, answers);
-            questions.add(question);
-        }
+            csvParser.close();
 
-        return questions;
+            this.questions = questionList;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
