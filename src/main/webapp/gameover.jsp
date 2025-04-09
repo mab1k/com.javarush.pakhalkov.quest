@@ -5,11 +5,16 @@
   <meta charset="UTF-8">
   <title>Game Over</title>
 </head>
-<body>
-<h1>Вы проиграли</h1>
-<p>Спасибо за игру!</p>
-<p>Ваше имя: ${userName}</p>
-<p>Количество ваших игр за сессию: ${gamesPlayed}</p>
-<a href="${pageContext.request.contextPath}/quest-servlet?restart=true">Начать заново</a>
+<body style="background-image: url('${pageContext.request.contextPath}/img/space.jpg');
+        background-size: 1920px 1200px;
+        background-repeat: no-repeat;
+        background-position: center center;">
+<div style="margin-top: 150px; text-align: center">
+  <h1 style="color: red" onclick="">Вы проиграли</h1>
+  <p style="color: white">Спасибо за игру!</p>
+  <p style="color: white">Ваше имя: ${userName}</p>
+  <p style="color: white">Количество ваших игр за сессию: ${gamesPlayed}</p>
+  <a style="color: white" href="${pageContext.request.contextPath}/quest-servlet?restart=true">Начать заново</a>
+</div>
 </body>
 </html>
